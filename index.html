@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>ShopPro - Hệ thống bán hàng chuyên nghiệp</title>
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Moment.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #e74c3c;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --text-color: #333;
+            --light-bg: #f8f9fa;
+            --border-radius: 12px;
+            --box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            --transition: all 0.3s ease;
+        }
+
+        body {
+            background: #f5f5f5;
+            color: var(--text-color);
+            min-height: 100vh;
+        }
+
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: 0.5s;
+        }
+
+        .loading-screen.hide {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--secondary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Custom Background - CHỈ ADMIN MỚI THẤY */
+        .custom-bg-control {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            box-shadow: var(--box-shadow);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            border: 2px solid var(--primary-color);
+            display: none; /* Mặc định ẩn, chỉ admin mới thấy */
+        }
+
+        .custom-bg-control.admin-show {
+            display: flex;
+        }
+
+        .custom-bg-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: white;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            z-index: 1001;
+            width: 90%;
+            max-width: 600px;
+            transition: var(--transition);
+            opacity: 0;
+            visibility: hidden;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .custom-bg-panel.active {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Header */
+        header {
+            background: white;
+            box-shadow: var(--box-shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .logo i {
+            color: var(--secondary-color);
+            font-size: 32px;
+        }
+
+        .search-bar {
+            flex: 1;
+            max-width: 600px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-bar input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 30px;
+            font-size: 16px;
+        }
+
+        .search-bar button {
+            padding: 12px 25px;
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .nav-icons {
+            display: flex;
+            gap: 25px;
+            align-items: center;
+        }
+
+        .nav-icon {
+            position: relative;
+            cursor: pointer;
+            font-size: 22px;
+            color: var(--primary-color);
+        }
+
+        .badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--secondary-color);
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-balance {
+            background: var(--success-color);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 30px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        /* Auth Modal */
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: white;
+            border-radius: var(--border-radius);
+            z-index: 1002;
+            width: 90%;
+            max-width: 500px;
+            transition: var(--transition);
+            opacity: 0;
+            visibility: hidden;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal.active {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--primary-color);
+            color: white;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+        }
+
+        .close-modal {
+            font-size: 30px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            border-bottom: 3px solid #eee;
+            font-weight: 600;
+        }
+
+        .auth-tab.active {
+            border-bottom-color: var(--secondary-color);
+            color: var(--secondary-color);
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #eee;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin-top: 10px;
+            color: var(--accent-color);
+            cursor: pointer;
+        }
+
+        /* User Menu */
+        .user-menu {
+            position: fixed;
+            top: 80px;
+            right: 30px;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            width: 350px;
+            z-index: 1001;
+            display: none;
+        }
+
+        .user-menu.active {
+            display: block;
+        }
+
+        .user-menu-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            background: var(--primary-color);
+            color: white;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+        }
+
+        .user-role {
+            display: inline-block;
+            padding: 5px 10px;
+            background: var(--secondary-color);
+            border-radius: 20px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .user-balance-large {
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+
+        .user-menu-items {
+            padding: 10px;
+        }
+
+        .user-menu-item {
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            border-radius: 10px;
+        }
+
+        .user-menu-item:hover {
+            background: var(--light-bg);
+        }
+
+        /* Admin Only Items - CHỈ ADMIN MỚI THẤY */
+        .admin-only {
+            display: none;
+        }
+
+        .admin-only.show {
+            display: flex;
+        }
+
+        /* Admin Dashboard */
+        .admin-page {
+            display: none;
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .admin-page.active {
+            display: block;
+        }
+
+        .admin-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin-bottom: 30px;
+        }
+
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .admin-stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .admin-stat-card h3 {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .admin-stat-card .number {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .admin-charts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+        }
+
+        .admin-table {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow-x: auto;
+            margin-top: 30px;
+        }
+
+        .admin-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .admin-table th {
+            background: var(--primary-color);
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+
+        .admin-table td {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-confirmed { background: #d4edda; color: #155724; }
+        .status-shipping { background: #cce5ff; color: #004085; }
+        .status-delivered { background: #d1e7dd; color: #0f5132; }
+        .status-cancelled { background: #f8d7da; color: #721c24; }
+
+        .action-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 5px;
+            color: white;
+        }
+
+        .btn-edit { background: var(--warning-color); }
+        .btn-delete { background: var(--danger-color); }
+        .btn-view { background: var(--accent-color); }
+        .btn-success { background: var(--success-color); }
+
+        /* Deposit Page */
+        .deposit-page {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 30px;
+        }
+
+        .deposit-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .current-balance {
+            background: var(--light-bg);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .current-balance .amount {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--success-color);
+        }
+
+        .momo-section {
+            background: linear-gradient(135deg, #ae2070 0%, #8e1a5c 100%);
+            color: white;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            margin-bottom: 30px;
+        }
+
+        .momo-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .momo-link span {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .momo-link button {
+            background: white;
+            color: var(--momo-color, #ae2070);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .amount-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .amount-option {
+            padding: 15px;
+            background: white;
+            border: 2px solid #eee;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .amount-option:hover {
+            border-color: #ae2070;
+        }
+
+        .transaction-history {
+            margin-top: 40px;
+        }
+
+        .transaction-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .transaction-table th,
+        .transaction-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .transaction-table th {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Products Grid */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .product-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 48px;
+        }
+
+        .product-info {
+            padding: 20px;
+        }
+
+        .product-name {
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .product-price {
+            color: var(--secondary-color);
+            font-weight: 700;
+            font-size: 20px;
+        }
+
+        .product-stock {
+            color: #999;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1001;
+            display: none;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            z-index: 1100;
+            transition: var(--transition);
+            opacity: 0;
+            visibility: hidden;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-container {
+                flex-direction: column;
+            }
+            
+            .admin-charts {
+                grid-template-columns: 1fr;
+            }
+            
+            .amount-options {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="spinner"></div>
+        <p style="margin-top: 20px;">Đang tải dữ liệu...</p>
+    </div>
+
+    <!-- Custom Background - CHỈ ADMIN MỚI THẤY -->
+    <div class="custom-bg-control" id="customBgControl" onclick="toggleBgPanel()">
+        <i class="fas fa-palette"></i>
+        <span>Tùy chỉnh giao diện (Admin)</span>
+    </div>
+
+    <!-- Background Panel -->
+    <div class="custom-bg-panel" id="bgPanel">
+        <h2><i class="fas fa-paint-roller"></i> TÙY CHỈNH GIAO DIỆN (ADMIN)</h2>
+        <p>Chỉ quản trị viên mới có quyền thay đổi</p>
+        
+        <div style="margin: 20px 0">
+            <h3>Màu chủ đạo</h3>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <div style="width: 50px; height: 50px; background: #2c3e50; border-radius: 50%; cursor: pointer;" onclick="setPrimaryColor('#2c3e50')"></div>
+                <div style="width: 50px; height: 50px; background: #e74c3c; border-radius: 50%; cursor: pointer;" onclick="setPrimaryColor('#e74c3c')"></div>
+                <div style="width: 50px; height: 50px; background: #3498db; border-radius: 50%; cursor: pointer;" onclick="setPrimaryColor('#3498db')"></div>
+                <div style="width: 50px; height: 50px; background: #27ae60; border-radius: 50%; cursor: pointer;" onclick="setPrimaryColor('#27ae60')"></div>
+                <div style="width: 50px; height: 50px; background: #f39c12; border-radius: 50%; cursor: pointer;" onclick="setPrimaryColor('#f39c12')"></div>
+                <div style="width: 50px; height: 50px; background: #9b59b6; border-radius: 50%; cursor: pointer;" onclick="setPrimaryColor('#9b59b6')"></div>
+            </div>
+        </div>
+        
+        <div style="margin: 20px 0">
+            <h3>Hình nền</h3>
+            <input type="file" id="bgImage" accept="image/*" style="width: 100%; padding: 10px;">
+        </div>
+        
+        <div style="margin: 20px 0">
+            <h3>Cài đặt khác</h3>
+            <label style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="darkMode" onchange="toggleDarkMode()"> Chế độ tối
+            </label>
+        </div>
+        
+        <button class="btn btn-success" onclick="saveBackground()" style="width: 100%;">Lưu cài đặt</button>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <div class="logo" onclick="showHomePage()">
+                <i class="fas fa-store"></i>
+                <span id="shopName">ShopVIP</span>
+            </div>
+            
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Tìm kiếm sản phẩm...">
+                <button onclick="searchProducts()"><i class="fas fa-search"></i></button>
+            </div>
+            
+            <div class="nav-icons">
+                <div class="nav-icon" onclick="showDepositPage()">
+                    <i class="fas fa-wallet"></i>
+                    <span class="badge" id="balanceBadge">0đ</span>
+                </div>
+                <div class="nav-icon" onclick="toggleCart()">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="badge" id="cartCount">0</span>
+                </div>
+                <div class="nav-icon" onclick="toggleUserMenu()">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- User Menu -->
+    <div class="user-menu" id="userMenu">
+        <div class="user-menu-header">
+            <div>
+                <h3 id="menuUserName">Khách</h3>
+                <span class="user-role" id="userRole">Khách hàng</span>
+                <div class="user-balance-large" id="menuUserBalance">0đ</div>
+            </div>
+        </div>
+        <div class="user-menu-items">
+            <div class="user-menu-item" onclick="viewProfile()">
+                <i class="fas fa-user"></i> Hồ sơ cá nhân
+            </div>
+            <div class="user-menu-item" onclick="viewOrders()">
+                <i class="fas fa-shopping-bag"></i> Đơn hàng của tôi
+            </div>
+            <div class="user-menu-item" onclick="showDepositPage()">
+                <i class="fas fa-wallet"></i> Nạp tiền
+            </div>
+            <div class="user-menu-item" onclick="viewTransactionHistory()">
+                <i class="fas fa-history"></i> Lịch sử giao dịch
+            </div>
+            
+            <!-- CHỈ ADMIN MỚI THẤY -->
+            <div class="user-menu-item admin-only" id="adminDashboardBtn" onclick="toggleAdminDashboard()">
+                <i class="fas fa-crown" style="color: gold;"></i> Admin Dashboard
+            </div>
+            <div class="user-menu-item admin-only" id="adminSettingsBtn" onclick="toggleBgPanel()">
+                <i class="fas fa-paint-brush"></i> Tùy chỉnh giao diện
+            </div>
+            <div class="user-menu-item admin-only" id="adminUsersBtn" onclick="manageUsers()">
+                <i class="fas fa-users-cog"></i> Quản lý người dùng
+            </div>
+            
+            <div class="user-menu-item" onclick="changePassword()">
+                <i class="fas fa-key"></i> Đổi mật khẩu
+            </div>
+            <div class="user-menu-item" onclick="logout()" style="color: var(--danger-color);">
+                <i class="fas fa-sign-out-alt"></i> Đăng xuất
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div class="modal" id="authModal">
+        <div class="modal-header">
+            <h3><i class="fas fa-user-circle"></i> Tài khoản</h3>
+            <span class="close-modal" onclick="closeModal('authModal')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="auth-tabs">
+                <div class="auth-tab active" onclick="switchAuthTab('login')">Đăng nhập</div>
+                <div class="auth-tab" onclick="switchAuthTab('register')">Đăng ký</div>
+            </div>
+            
+            <!-- Login Form -->
+            <div class="auth-form active" id="loginForm">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" placeholder="Nhập email">
+                </div>
+                <div class="form-group">
+                    <label>Mật khẩu</label>
+                    <input type="password" id="loginPassword" placeholder="Nhập mật khẩu">
+                </div>
+                <div class="forgot-password" onclick="forgotPassword()">Quên mật khẩu?</div>
+                <button class="btn btn-primary" onclick="login()">Đăng nhập</button>
+            </div>
+            
+            <!-- Register Form -->
+            <div class="auth-form" id="registerForm">
+                <div class="form-group">
+                    <label>Họ tên</label>
+                    <input type="text" id="registerName" placeholder="Nhập họ tên">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="registerEmail" placeholder="Nhập email">
+                </div>
+                <div class="form-group">
+                    <label>Số điện thoại</label>
+                    <input type="tel" id="registerPhone" placeholder="Nhập số điện thoại">
+                </div>
+                <div class="form-group">
+                    <label>Mật khẩu</label>
+                    <input type="password" id="registerPassword" placeholder="Nhập mật khẩu">
+                </div>
+                <div class="form-group">
+                    <label>Xác nhận mật khẩu</label>
+                    <input type="password" id="registerConfirm" placeholder="Nhập lại mật khẩu">
+                </div>
+                <button class="btn btn-primary" onclick="register()">Đăng ký</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard - CHỈ ADMIN MỚI THẤY -->
+    <div class="admin-page" id="adminPage">
+        <div class="admin-header">
+            <h1><i class="fas fa-crown"></i> Admin Dashboard</h1>
+            <p>Chào mừng quản trị viên!</p>
+        </div>
+        
+        <!-- Admin Stats -->
+        <div class="admin-stats">
+            <div class="admin-stat-card">
+                <h3>Doanh thu hôm nay</h3>
+                <div class="number" id="todayRevenue">0đ</div>
+            </div>
+            <div class="admin-stat-card">
+                <h3>Đơn hàng hôm nay</h3>
+                <div class="number" id="todayOrders">0</div>
+            </div>
+            <div class="admin-stat-card">
+                <h3>Tổng người dùng</h3>
+                <div class="number" id="totalUsers">0</div>
+            </div>
+            <div class="admin-stat-card">
+                <h3>Số dư hệ thống</h3>
+                <div class="number" id="systemBalance">0đ</div>
+            </div>
+        </div>
+        
+        <!-- Admin Charts -->
+        <div class="admin-charts">
+            <div class="chart-container">
+                <h3>Doanh thu 7 ngày</h3>
+                <canvas id="revenueChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Top sản phẩm bán chạy</h3>
+                <canvas id="topProductsChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- User Management -->
+        <div class="admin-table">
+            <h3 style="padding: 20px;">Quản lý người dùng</h3>
+            <table id="usersTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Email</th>
+                        <th>Vai trò</th>
+                        <th>Số dư</th>
+                        <th>Ngày tạo</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody"></tbody>
+            </table>
+        </div>
+        
+        <!-- Deposit Management - CHỈ ADMIN MỚI ĐƯỢC CỘNG TIỀN -->
+        <div class="admin-table">
+            <h3 style="padding: 20px;">Cộng tiền thủ công (Admin)</h3>
+            <div style="padding: 20px;">
+                <div class="form-group">
+                    <label>Email khách hàng</label>
+                    <input type="email" id="adminDepositEmail" placeholder="Nhập email">
+                </div>
+                <div class="form-group">
+                    <label>Số tiền</label>
+                    <input type="number" id="adminDepositAmount" placeholder="Nhập số tiền">
+                </div>
+                <div class="form-group">
+                    <label>Ghi chú</label>
+                    <input type="text" id="adminDepositNote" placeholder="Nhập ghi chú">
+                </div>
+                <button class="btn btn-success" onclick="adminAddBalance()">Cộng tiền</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Products Grid -->
+        <div class="products-grid" id="productsGrid"></div>
+    </div>
+
+    <!-- Deposit Page -->
+    <div class="deposit-page" id="depositPage" style="display: none;">
+        <div class="deposit-header">
+            <h2><i class="fas fa-wallet"></i> Nạp tiền vào ví</h2>
+            <p>Chọn phương thức và số tiền muốn nạp</p>
+        </div>
+        
+        <div class="current-balance">
+            <div class="label">Số dư hiện tại</div>
+            <div class="amount" id="currentBalanceDisplay">0đ</div>
+        </div>
+        
+        <!-- MoMo Section -->
+        <div class="momo-section">
+            <h3><i class="fab fa-momo"></i> Nạp qua MoMo</h3>
+            <p>Quét mã QR hoặc click link để chuyển tiền</p>
+            
+            <div class="momo-link">
+                <span>me.momo.vn/vantu</span>
+                <button onclick="copyMomoLink()">Copy link</button>
+            </div>
+            
+            <div class="qr-code" style="text-align: center; margin: 20px 0;">
+                <img src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=https://me.momo.vn/vantu&choe=UTF-8" 
+                     alt="QR MoMo" style="width: 200px; height: 200px; background: white; padding: 10px; border-radius: 10px;">
+            </div>
+            
+            <div class="amount-options">
+                <div class="amount-option" onclick="selectAmount(50000)">50,000đ</div>
+                <div class="amount-option" onclick="selectAmount(100000)">100,000đ</div>
+                <div class="amount-option" onclick="selectAmount(200000)">200,000đ</div>
+                <div class="amount-option" onclick="selectAmount(500000)">500,000đ</div>
+                <div class="amount-option" onclick="selectAmount(1000000)">1,000,000đ</div>
+                <div class="amount-option" onclick="selectAmount(2000000)">2,000,000đ</div>
+            </div>
+            
+            <div class="form-group">
+                <label>Số tiền khác</label>
+                <input type="number" id="customAmount" placeholder="Nhập số tiền">
+            </div>
+            
+            <div class="form-group">
+                <label>Mã giao dịch MoMo (sau khi chuyển)</label>
+                <input type="text" id="momoTransactionId" placeholder="Nhập mã giao dịch">
+            </div>
+            
+            <button class="btn btn-success" onclick="submitDeposit()" style="width: 100%;">
+                <i class="fas fa-check"></i> Xác nhận đã chuyển tiền
+            </button>
+            
+            <p style="color: #999; font-size: 12px; margin-top: 10px;">
+                <i class="fas fa-info-circle"></i> Sau khi chuyển, admin sẽ kiểm tra và cộng tiền trong 5-10 phút
+            </p>
+        </div>
+        
+        <!-- Transaction History -->
+        <div class="transaction-history">
+            <h3>Lịch sử nạp tiền</h3>
+            <table class="transaction-table">
+                <thead>
+                    <tr>
+                        <th>Thời gian</th>
+                        <th>Số tiền</th>
+                        <th>Phương thức</th>
+                        <th>Mã GD</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody id="transactionHistoryBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay" onclick="closeAllModals()"></div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle" style="color: var(--success-color);"></i>
+        <span id="toastMessage">Thành công!</span>
+    </div>
+
+    <script>
+        // ==================== DỮ LIỆU ====================
+        let users = JSON.parse(localStorage.getItem('users')) || [
+            {
+                id: 1,
+                email: 'admin@shoppro.com',
+                password: 'admin123',
+                name: 'Admin',
+                phone: '0123456789',
+                role: 'admin',
+                balance: 10000000,
+                createdAt: '2024-01-01'
+            },
+            {
+                id: 2,
+                email: 'staff@shoppro.com',
+                password: 'staff123',
+                name: 'Nhân viên',
+                phone: '0987654321',
+                role: 'staff',
+                balance: 1000000,
+                createdAt: '2024-01-01'
+            },
+            {
+                id: 3,
+                email: 'user@example.com',
+                password: 'user123',
+                name: 'Khách hàng',
+                phone: '0909123456',
+                role: 'user',
+                balance: 500000,
+                createdAt: '2024-01-01'
+            }
+        ];
+
+        let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+        let orders = JSON.parse(localStorage.getItem('orders')) || [];
+
+        // ==================== INIT ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                document.getElementById('loadingScreen').classList.add('hide');
+            }, 1000);
+
+            renderProducts();
+            updateCartUI();
+            updateUserUI();
+            checkAdminAccess();
+        });
+
+        // ==================== KIỂM TRA ADMIN ====================
+        function checkAdminAccess() {
+            if (currentUser && currentUser.role === 'admin') {
+                // Hiện nút tùy chỉnh giao diện
+                document.getElementById('customBgControl').classList.add('admin-show');
+                
+                // Hiện các menu admin
+                document.querySelectorAll('.admin-only').forEach(el => {
+                    el.classList.add('show');
+                });
+                
+                // Load màu sắc đã lưu
+                const savedColor = localStorage.getItem('primaryColor');
+                if (savedColor) {
+                    document.documentElement.style.setProperty('--primary-color', savedColor);
+                }
+                
+                // Load background đã lưu
+                const savedBg = localStorage.getItem('shopBackground');
+                if (savedBg) {
+                    document.body.style.background = savedBg;
+                }
+            } else {
+                // Ẩn nút tùy chỉnh giao diện
+                document.getElementById('customBgControl').classList.remove('admin-show');
+                
+                // Ẩn các menu admin
+                document.querySelectorAll('.admin-only').forEach(el => {
+                    el.classList.remove('show');
+                });
+            }
+        }
+
+        // ==================== ADMIN: TÙY CHỈNH GIAO DIỆN ====================
+        function toggleBgPanel() {
+            if (!currentUser || currentUser.role !== 'admin') {
+                showToast('Chỉ Admin mới có quyền này!');
+                return;
+            }
+            document.getElementById('bgPanel').classList.toggle('active');
+            document.getElementById('overlay').classList.toggle('active');
+        }
+
+        function setPrimaryColor(color) {
+            if (!currentUser || currentUser.role !== 'admin') {
+                showToast('Chỉ Admin mới có quyền này!');
+                return;
+            }
+            document.documentElement.style.setProperty('--primary-color', color);
+            localStorage.setItem('primaryColor', color);
+            showToast('Đã đổi màu chủ đạo!');
+        }
+
+        function saveBackground() {
+            if (!currentUser || currentUser.role !== 'admin') return;
+            
+            const bgImage = document.getElementById('bgImage').files[0];
+            if (bgImage) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.body.style.background = `url('${e.target.result}')`;
+                    document.body.style.backgroundSize = 'cover';
+                    localStorage.setItem('shopBackground', `url('${e.target.result}')`);
+                    showToast('Đã lưu hình nền!');
+                };
+                reader.readAsDataURL(bgImage);
+            }
+            
+            const darkMode = document.getElementById('darkMode').checked;
+            if (darkMode) {
+                document.body.style.filter = 'invert(1) hue-rotate(180deg)';
+            } else {
+                document.body.style.filter = 'none';
+            }
+            
+            toggleBgPanel();
+        }
+
+        function toggleDarkMode() {
+            // Chỉ admin mới được bật
+            if (!currentUser || currentUser.role !== 'admin') {
+                document.getElementById('darkMode').checked = false;
+                showToast('Chỉ Admin mới có quyền này!');
+                return;
+            }
+        }
+
+        // ==================== ADMIN: CỘNG TIỀN ====================
+        function adminAddBalance() {
+            if (!currentUser || currentUser.role !== 'admin') {
+                showToast('Chỉ Admin mới có quyền này!');
+                return;
+            }
+
+            const email = document.getElementById('adminDepositEmail').value;
+            const amount = parseInt(document.getElementById('adminDepositAmount').value);
+            const note = document.getElementById('adminDepositNote').value;
+
+            if (!email || !amount) {
+                showToast('Vui lòng nhập đầy đủ thông tin');
+                return;
+            }
+
+            const user = users.find(u => u.email === email);
+            if (!user) {
+                showToast('Không tìm thấy người dùng');
+                return;
+            }
+
+            // Cộng tiền
+            user.balance += amount;
+            
+            // Lưu giao dịch
+            transactions.push({
+                id: 'TXN' + Date.now(),
+                userId: user.id,
+                email: user.email,
+                amount: amount,
+                method: 'admin',
+                note: note,
+                status: 'completed',
+                time: moment().format('YYYY-MM-DD HH:mm:ss')
+            });
+
+            localStorage.setItem('users', JSON.stringify(users));
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+            
+            showToast(`Đã cộng ${amount.toLocaleString()}đ cho ${email}`);
+            
+            // Xóa form
+            document.getElementById('adminDepositEmail').value = '';
+            document.getElementById('adminDepositAmount').value = '';
+            document.getElementById('adminDepositNote').value = '';
+            
+            // Cập nhật UI
+            updateAdminStats();
+            renderUsersTable();
+        }
+
+        // ==================== ADMIN: QUẢN LÝ NGƯỜI DÙNG ====================
+        function manageUsers() {
+            if (!currentUser || currentUser.role !== 'admin') {
+                showToast('Chỉ Admin mới có quyền này!');
+                return;
+            }
+            
+            toggleAdminDashboard();
+            renderUsersTable();
+        }
+
+        function renderUsersTable() {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = users.map(user => `
+                <tr>
+                    <td>${user.id}</td>
+                    <td>${user.email}</td>
+                    <td>
+                        <select onchange="changeUserRole(${user.id}, this.value)">
+                            <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                            <option value="staff" ${user.role === 'staff' ? 'selected' : ''}>Nhân viên</option>
+                            <option value="user" ${user.role === 'user' ? 'selected' : ''}>Khách hàng</option>
+                        </select>
+                    </td>
+                    <td>${user.balance.toLocaleString()}đ</td>
+                    <td>${user.createdAt}</td>
+                    <td>
+                        <button class="action-btn btn-edit" onclick="adminAddBalanceToUser(${user.id})">
+                            <i class="fas fa-plus"></i> Cộng tiền
+                        </button>
+                        <button class="action-btn btn-delete" onclick="deleteUser(${user.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function changeUserRole(userId, newRole) {
+            if (!currentUser || currentUser.role !== 'admin') {
+                showToast('Chỉ Admin mới có quyền này!');
+                return;
+            }
+
+            const user = users.find(u => u.id === userId);
+            if (user) {
+                user.role = newRole;
+                localStorage.setItem('users', JSON.stringify(users));
+                showToast('Đã thay đổi quyền người dùng!');
+            }
+        }
+
+        function adminAddBalanceToUser(userId) {
+            if (!currentUser || currentUser.role !== 'admin') {
+                showToast('Chỉ Admin mới có quyền này!');
+                return;
+            }
+
+            const amount = prompt('Nhập số tiền muốn cộng:');
+            if (amount && !isNaN(amount)) {
+                const user = users.find(u => u.id === userId);
+                if (user) {
+                    user.balance += parseInt(amount);
+                    localStorage.setItem('users', JSON.stringify(users));
+                    renderUsersTable();
+                    showToast(`Đã cộng ${parseInt(amount).toLocaleString()}đ cho ${user.email}`);
+                }
+            }
+        }
+
+        function deleteUser(userId) {
+            if (!currentUser || currentUser.role !== 'admin') {
+                showToast('Chỉ Admin mới có quyền này!');
+                return;
+            }
+
+            if (confirm('Bạn có chắc muốn xóa người dùng này?')) {
+                users = users.filter(u => u.id !== userId);
+                localStorage.setItem('users', JSON.stringify(users));
+                renderUsersTable();
+                showToast('Đã xóa người dùng!');
+            }
+        }
+
+        // ==================== ADMIN: DASHBOARD ====================
+        function toggleAdminDashboard() {
+            if (!currentUser || currentUser.role !== 'admin') {
+                showToast('Chỉ Admin mới có quyền này!');
+                return;
+            }
+
+            document.getElementById('adminPage').classList.toggle('active');
+            document.getElementById('overlay').classList.toggle('active');
+            
+            if (document.getElementById('adminPage').classList.contains('active')) {
+                updateAdminStats();
+                renderUsersTable();
+                initCharts();
+            }
+        }
+
+        function updateAdminStats() {
+            const today = moment().format('YYYY-MM-DD');
+            const todayTransactions = transactions.filter(t => t.time.startsWith(today));
+            
+            document.getElementById('todayRevenue').textContent = 
+                todayTransactions.reduce((sum, t) => sum + t.amount, 0).toLocaleString() + 'đ';
+            
+            document.getElementById('todayOrders').textContent = orders.length;
+            document.getElementById('totalUsers').textContent = users.length;
+            
+            const systemBalance = users.reduce((sum, u) => sum + u.balance, 0);
+            document.getElementById('systemBalance').textContent = systemBalance.toLocaleString() + 'đ';
+        }
+
+        // ==================== AUTH ====================
+        function switchAuthTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+            
+            if (tab === 'login') {
+                document.querySelector('.auth-tab').classList.add('active');
+                document.getElementById('loginForm').classList.add('active');
+            } else {
+                document.querySelectorAll('.auth-tab')[1].classList.add('active');
+                document.getElementById('registerForm').classList.add('active');
+            }
+        }
+
+        function openAuthModal() {
+            document.getElementById('authModal').classList.add('active');
+            document.getElementById('overlay').classList.add('active');
+        }
+
+        function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const user = users.find(u => u.email === email && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                updateUserUI();
+                checkAdminAccess();
+                closeModal('authModal');
+                showToast('Đăng nhập thành công!');
+            } else {
+                showToast('Email hoặc mật khẩu không đúng');
+            }
+        }
+
+        function register() {
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const phone = document.getElementById('registerPhone').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirm = document.getElementById('registerConfirm').value;
+
+            if (!name || !email || !phone || !password) {
+                showToast('Vui lòng nhập đầy đủ thông tin');
+                return;
+            }
+
+            if (password !== confirm) {
+                showToast('Mật khẩu không khớp');
+                return;
+            }
+
+            if (users.find(u => u.email === email)) {
+                showToast('Email đã tồn tại');
+                return;
+            }
+
+            const newUser = {
+                id: users.length + 1,
+                email: email,
+                password: password,
+                name: name,
+                phone: phone,
+                role: 'user',
+                balance: 50000, // Tặng 50k khi đăng ký
+                createdAt: moment().format('YYYY-MM-DD')
+            };
+
+            users.push(newUser);
+            localStorage.setItem('users', JSON.stringify(users));
+            
+            showToast('Đăng ký thành công! Đã tặng 50,000đ vào ví');
+            switchAuthTab('login');
+        }
+
+        function forgotPassword() {
+            const email = prompt('Nhập email của bạn:');
+            if (email) {
+                const user = users.find(u => u.email === email);
+                if (user) {
+                    alert(`Mật khẩu của bạn là: ${user.password}`);
+                } else {
+                    alert('Email không tồn tại!');
+                }
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('currentUser');
+            updateUserUI();
+            checkAdminAccess();
+            showToast('Đã đăng xuất!');
+            
+            // Đóng các menu
+            document.getElementById('userMenu').classList.remove('active');
+            document.getElementById('adminPage').classList.remove('active');
+        }
+
+        // ==================== USER UI ====================
+        function updateUserUI() {
+            if (currentUser) {
+                document.getElementById('menuUserName').textContent = currentUser.name;
+                document.getElementById('userRole').textContent = 
+                    currentUser.role === 'admin' ? 'Quản trị viên' : 
+                    currentUser.role === 'staff' ? 'Nhân viên' : 'Khách hàng';
+                document.getElementById('menuUserBalance').textContent = currentUser.balance.toLocaleString() + 'đ';
+                document.getElementById('balanceBadge').textContent = currentUser.balance.toLocaleString() + 'đ';
+            } else {
+                document.getElementById('menuUserName').textContent = 'Khách';
+                document.getElementById('userRole').textContent = 'Khách hàng';
+                document.getElementById('menuUserBalance').textContent = '0đ';
+                document.getElementById('balanceBadge').textContent = '0đ';
+            }
+        }
+
+        function toggleUserMenu() {
+            if (!currentUser) {
+                openAuthModal();
+                return;
+            }
+            document.getElementById('userMenu').classList.toggle('active');
+        }
+
+        function viewProfile() {
+            showToast('Xem hồ sơ - Đang phát triển');
+        }
+
+        function viewOrders() {
+            showToast('Xem đơn hàng - Đang phát triển');
+        }
+
+        function viewTransactionHistory() {
+            showDepositPage();
+        }
+
+        function changePassword() {
+            showToast('Đổi mật khẩu - Đang phát triển');
+        }
+
+        // ==================== DEPOSIT ====================
+        function showDepositPage() {
+            if (!currentUser) {
+                openAuthModal();
+                return;
+            }
+
+            document.getElementById('mainContent').style.display = 'none';
+            document.getElementById('depositPage').style.display = 'block';
+            document.getElementById('currentBalanceDisplay').textContent = currentUser.balance.toLocaleString() + 'đ';
+            renderTransactionHistory();
+        }
+
+        function showHomePage() {
+            document.getElementById('mainContent').style.display = 'block';
+            document.getElementById('depositPage').style.display = 'none';
+        }
+
+        function selectAmount(amount) {
+            document.getElementById('customAmount').value = amount;
+        }
+
+        function copyMomoLink() {
+            navigator.clipboard.writeText('https://me.momo.vn/vantu');
+            showToast('Đã copy link MoMo!');
+        }
+
+        function submitDeposit() {
+            if (!currentUser) {
+                openAuthModal();
+                return;
+            }
+
+            const amount = parseInt(document.getElementById('customAmount').value);
+            const transactionId = document.getElementById('momoTransactionId').value;
+
+            if (!amount || amount < 10000) {
+                showToast('Số tiền tối thiểu 10,000đ');
+                return;
+            }
+
+            if (!transactionId) {
+                showToast('Vui lòng nhập mã giao dịch MoMo');
+                return;
+            }
+
+            // Tạo yêu cầu nạp tiền
+            const transaction = {
+                id: 'TXN' + Date.now(),
+                userId: currentUser.id,
+                email: currentUser.email,
+                amount: amount,
+                method: 'momo',
+                transactionId: transactionId,
+                status: 'pending',
+                time: moment().format('YYYY-MM-DD HH:mm:ss')
+            };
+
+            transactions.push(transaction);
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+
+            showToast('Yêu cầu nạp tiền đã được gửi! Admin sẽ xử lý trong 5-10 phút');
+            
+            // Xóa form
+            document.getElementById('customAmount').value = '';
+            document.getElementById('momoTransactionId').value = '';
+            
+            renderTransactionHistory();
+        }
+
+        function renderTransactionHistory() {
+            const userTransactions = transactions.filter(t => t.userId === currentUser?.id);
+            const tbody = document.getElementById('transactionHistoryBody');
+            
+            tbody.innerHTML = userTransactions.map(t => `
+                <tr>
+                    <td>${t.time}</td>
+                    <td>${t.amount.toLocaleString()}đ</td>
+                    <td>${t.method === 'momo' ? 'MoMo' : 'Khác'}</td>
+                    <td>${t.transactionId || ''}</td>
+                    <td>
+                        <span class="status-badge ${t.status === 'completed' ? 'status-confirmed' : 'status-pending'}">
+                            ${t.status === 'completed' ? 'Hoàn thành' : 'Chờ xử lý'}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // ==================== CART ====================
+        function toggleCart() {
+            // Implement cart functionality
+            showToast('Giỏ hàng - Đang phát triển');
+        }
+
+        function updateCartUI() {
+            document.getElementById('cartCount').textContent = cart.length;
+        }
+
+        // ==================== PRODUCTS ====================
+        function renderProducts() {
+            const products = [
+                { id: 1, name: 'Túi Mù Liên Quân', price: 50000, stock: 100 },
+                { id: 2, name: 'Skin Tốc Chiến', price: 150000, stock: 50 },
+                { id: 3, name: 'Tài khoản LMHT', price: 200000, stock: 30 },
+                { id: 4, name: 'Vật phẩm Play Together', price: 50000, stock: 200 },
+                { id: 5, name: 'Nạp ZingSpeed', price: 100000, stock: 1000 },
+                { id: 6, name: 'Gunny Đại Chiến', price: 80000, stock: 150 }
+            ];
+
+            const grid = document.getElementById('productsGrid');
+            grid.innerHTML = products.map(p => `
+                <div class="product-card" onclick="buyProduct(${p.id})">
+                    <div class="product-image">
+                        <i class="fas fa-gamepad"></i>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-name">${p.name}</div>
+                        <div class="product-price">${p.price.toLocaleString()}đ</div>
+                        <div class="product-stock">Còn ${p.stock} sản phẩm</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function buyProduct(id) {
+            if (!currentUser) {
+                openAuthModal();
+                return;
+            }
+            showToast('Chức năng mua hàng đang phát triển');
+        }
+
+        function searchProducts() {
+            const term = document.getElementById('searchInput').value;
+            showToast('Tìm kiếm: ' + term);
+        }
+
+        // ==================== CHARTS ====================
+        function initCharts() {
+            // Revenue chart
+            const ctx1 = document.getElementById('revenueChart').getContext('2d');
+            new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'],
+                    datasets: [{
+                        label: 'Doanh thu',
+                        data: [12000000, 19000000, 15000000, 25000000, 22000000, 30000000, 28000000],
+                        borderColor: '#e74c3c',
+                        tension: 0.1
+                    }]
+                }
+            });
+
+            // Top products chart
+            const ctx2 = document.getElementById('topProductsChart').getContext('2d');
+            new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: ['Túi Mù', 'Skin', 'Tài khoản', 'Vật phẩm', 'Nạp game'],
+                    datasets: [{
+                        label: 'Số lượng bán',
+                        data: [150, 120, 90, 200, 300],
+                        backgroundColor: '#3498db'
+                    }]
+                }
+            });
+        }
+
+        // ==================== UTILITY ====================
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            document.getElementById('overlay').classList.remove('active');
+        }
+
+        function closeAllModals() {
+            document.querySelectorAll('.modal, .custom-bg-panel, .user-menu, .admin-page').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.getElementById('overlay').classList.remove('active');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            toastMessage.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
+```
